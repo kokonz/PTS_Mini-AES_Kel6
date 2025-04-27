@@ -108,11 +108,10 @@ def encrypt_verbose(pt, key, log):
 
 
 def decrypt_verbose(ct, key, log):
-    # A.3.3: Decrypt (inverse sekuens) dengan log per ronde
+    # B.1: Decrypt (inverse sekuens) dengan log per ronde
     keys = key_expansion(key)
     state = text_to_state(ct)
     log(f"Initial: {format_hex(ct)}")
-    # A.3.3: AddRoundKey akhir
     state = add_round_key(state, keys[3]); log(f"AddRoundKey 3 -> {format_hex(state_to_text(state))}")
     state = shift_rows(state); log(f"ShiftRows  -> {format_hex(state_to_text(state))}")
     state = sub_nibbles(state, inv_s_box); log(f"SubNibbles -> {format_hex(state_to_text(state))}")
