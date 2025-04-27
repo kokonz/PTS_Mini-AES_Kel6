@@ -87,6 +87,7 @@ def encrypt_verbose(pt, key, log):
     state = add_round_key(state, keys[0])
     log(f"AddRoundKey 0 -> {format_hex(state_to_text(state))}")
     for r in range(1, 3):
+        log("\n")
         log(f"-- Round {r} --")
         state = sub_nibbles(state, s_box);
         log(f"SubNibbles -> {format_hex(state_to_text(state))}")
@@ -96,6 +97,7 @@ def encrypt_verbose(pt, key, log):
         log(f"MixColumns-> {format_hex(state_to_text(state))}")
         state = add_round_key(state, keys[r]);
         log(f"AddRoundKey {r} -> {format_hex(state_to_text(state))}")
+    log("\n")
     log("-- Final Round --")
     state = sub_nibbles(state, s_box);
     log(f"SubNibbles -> {format_hex(state_to_text(state))}")
@@ -103,7 +105,9 @@ def encrypt_verbose(pt, key, log):
     log(f"ShiftRows  -> {format_hex(state_to_text(state))}")
     state = add_round_key(state, keys[3]);
     ct = state_to_text(state)
+    log("\n")
     log(f"Ciphertext: {format_hex(ct)}")
+    log("\n")
     return ct
 
 
@@ -116,12 +120,14 @@ def decrypt_verbose(ct, key, log):
     state = shift_rows(state); log(f"ShiftRows  -> {format_hex(state_to_text(state))}")
     state = sub_nibbles(state, inv_s_box); log(f"SubNibbles -> {format_hex(state_to_text(state))}")
     for r in range(2, 0, -1):
+        log("\n")
         log(f"-- Round {r} --")
         state = add_round_key(state, keys[r]);   log(f"AddRoundKey {r} -> {format_hex(state_to_text(state))}")
         state = inverse_mix_columns(state);      log(f"InvMixCol  -> {format_hex(state_to_text(state))}")
         state = shift_rows(state);               log(f"ShiftRows  -> {format_hex(state_to_text(state))}")
         state = sub_nibbles(state, inv_s_box);   log(f"SubNibbles -> {format_hex(state_to_text(state))}")
     state = add_round_key(state, keys[0]); pt = state_to_text(state)
+    log("\n")
     log(f"Plaintext: {format_hex(pt)}")
     return pt
 
