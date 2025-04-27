@@ -45,6 +45,8 @@ ex: `0x1234` -> `[[0x1, 0x2], [0x3, 0x4]]`.
 
 ## Flowchart
 
+![Flowchart Image](https://github.com/kokonz/PTS_Mini-AES_Kel6/blob/main/flowchart/gambar-flowchart.jpg)
+
 ## Implementasi Program
 
 - **Bahasa**: Python 3.x
