@@ -340,22 +340,42 @@ def cbc_decrypt(ciphertext, key, iv, log):
     return plaintext
 ```
 
-**Kelebihan CBC:**
-- Menyembunyikan pola dalam plaintext
-- Blok plaintext yang identik menghasilkan ciphertext yang berbeda
-- Kesalahan dalam satu blok hanya mempengaruhi dua blok plaintext saat dekripsi
+## Kelebihan CBC
+- Menyembunyikan pola dalam plaintext, sehingga meningkatkan keamanan data.
+- Blok plaintext yang identik menghasilkan ciphertext yang berbeda, berkat penggabungan dengan ciphertext blok sebelumnya.
+- Kesalahan dalam satu blok hanya mempengaruhi dua blok plaintext saat dekripsi, membatasi propagasi error.
+- Memberikan efek avalanche yang kuat: perubahan kecil pada plaintext atau IV menyebabkan perubahan besar dalam ciphertext.
+- Lebih tahan terhadap serangan analisis statistik dibandingkan ECB.
+- Cocok untuk mengenkripsi data dalam jumlah besar secara berurutan karena tidak mengungkapkan struktur data.
 
-**Kelemahan CBC:**
-- Tidak dapat diparalelkan saat enkripsi
-- Memerlukan IV yang acak dan unik
-- Rentan terhadap bit-flipping attack
+## Kelemahan CBC
+- Tidak dapat diparalelkan saat enkripsi karena setiap blok bergantung pada ciphertext blok sebelumnya, membuatnya kurang efisien untuk proses paralel.
+- Memerlukan IV (Initialization Vector) yang benar-benar acak dan unik untuk setiap sesi enkripsi; IV yang buruk dapat melemahkan keamanan.
+- Rentan terhadap bit-flipping attack: perubahan sengaja pada blok ciphertext bisa menyebabkan perubahan terkontrol pada plaintext setelah dekripsi.
+- Enkripsi real-time (streaming data) menjadi lebih kompleks karena harus memproses data blok demi blok.
+- Jika IV bocor atau dapat diprediksi, keamanan CBC dapat terganggu.
 
-### Perbandingan ECB dan CBC
+## Perbandingan ECB dan CBC
 
-Mode CBC menawarkan keamanan yang lebih baik dibandingkan ECB karena:
-1. CBC menyembunyikan pola dalam plaintext dengan lebih baik
-2. Blok plaintext yang identik menghasilkan blok ciphertext yang berbeda
-3. Perubahan satu bit dalam IV atau blok ciphertext memengaruhi semua blok plaintext berikutnya (efek avalanche pada level blok)
+**Electronic Codebook (ECB)** adalah mode enkripsi paling sederhana, di mana setiap blok plaintext dienkripsi secara independen menggunakan kunci yang sama. Karena itu:
+- Blok plaintext yang identik akan menghasilkan blok ciphertext yang identik.
+- Pola-pola dalam data plaintext tetap terlihat pada ciphertext, membuat ECB tidak aman untuk data yang memiliki struktur (misalnya gambar atau dokumen berformat).
+
+**Cipher Block Chaining (CBC)** mengatasi kelemahan ECB dengan cara:
+1. Setiap blok plaintext sebelum dienkripsi digabungkan (XOR) dengan ciphertext dari blok sebelumnya, membuat pola plaintext disamarkan secara efektif.
+2. Blok plaintext yang identik akan menghasilkan blok ciphertext yang berbeda, tergantung pada ciphertext blok sebelumnya dan IV.
+3. Perubahan satu bit dalam IV atau satu blok ciphertext dapat menyebabkan perubahan drastis dalam semua blok plaintext berikutnya saat dekripsi (efek avalanche).
+4. CBC lebih cocok untuk data berukuran besar dan bertujuan menjaga kerahasiaan pola, sementara ECB hanya cocok untuk data pendek atau data yang tidak memperlihatkan pola.
+
+| Aspek | ECB | CBC |
+| :--- | :--- | :--- |
+| Pola plaintext | Terlihat dalam ciphertext | Disamarkan |
+| Blok identik | Ciphertext identik | Ciphertext berbeda |
+| Proses enkripsi | Bisa diparalelkan | Tidak bisa diparalelkan |
+| Kebutuhan IV | Tidak perlu | Wajib acak dan unik |
+| Efek perubahan data | Lokal pada blok tersebut | Menyebar ke blok berikutnya (efek avalanche) |
+| Keamanan | Rendah untuk data berpola | Tinggi untuk data berpola |
+
 
 Dalam implementasi kami, mode CBC memastikan hasil enkripsi lebih aman dengan menambahkan IV di awal ciphertext, sehingga pesan yang sama akan menghasilkan ciphertext yang berbeda setiap kali dienkripsi.
 
