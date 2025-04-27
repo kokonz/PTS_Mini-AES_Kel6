@@ -23,35 +23,46 @@ Mini-AES adalah versi sederhana dari AES yang biasanya dan disini juga untuk kep
 **Plaintext dan Kunci:** 16 bit, dalam matriks 2x2 nibble (4 bit).
 ex: `0x1234` -> `[[0x1, 0x2], [0x3, 0x4]]`.
 
+
 ### Operasi Enkripsi
 
 - **SubNibbles:** Ganti nibble dengan S-Box `[9, 4, 10, 11, 13, 1, 8, 5, 6, 2, 0, 3, 12, 14, 15, 7]`.
 
+
 - **ShiftRows:** Tukar elemen baris kedua.
+
 
 - **MixColumns:** Campur kolom di GF(2^4) dengan matriks `[1, 4; 4, 1]`.
 
+
 - **AddRoundKey:** XOR state dengan kunci ronde.
 
+
 - **Struktur:** AddRoundKey awal -> 2 ronde penuh (SubNibbles, ShiftRows, MixColumns, AddRoundKey) -> Ronde akhir (tanpa MixColumns).
+
 
 ### Ekspansi Kunci
 
 - Kunci 16-bit jadi 4 nibble (`w0-w3`).
 
+
 - Kunci ronde baru: temp = `S-Box[w3] XOR rcon[i]`, lalu XOR berantai.
 
+
 - `rcon`: `[0x1, 0x2, 0x4]`.
+
 
 ## Flowchart
 
 ![Flowchart Image](https://github.com/kokonz/PTS_Mini-AES_Kel6/blob/main/flowchart/gambar-flowchart.jpg)
+
 
 ## Implementasi Program
 
 - **Bahasa**: Python 3.x
 - **Pustaka**: Tkinter (GUI)
 - **Fitur**: Enkripsi, dekripsi, ekspansi kunci, GUI, dan test case otomatis.
+
 
 ### Alur Singkat Program
 
@@ -70,28 +81,172 @@ ex: `0x1234` -> `[[0x1, 0x2], [0x3, 0x4]]`.
 3. **Output**: Tampilkan ciphertext hasil akhir (contoh: `0x18C2`) di label GUI.
 4. **Test Case**: Tombol "Run Tests" menjalankan 5 test case otomatis dengan hasil PASS/FAIL.
 
+
 ## Test Case
 
 - Plaintext: `0x1234, etc`
 
+
 - Kunci: `0xABCD, etc`
+
 
 - Ciphertext: `0x18C2, etc`
 
+
 (ditulis hardcode)
+
 
 **Langkah Enkripsi dan Deskripsi:**
 
+
 Untuk langkahnya sama seperti enkripsi dan deskripsi sebelumny. Namun, pada test case berfokus pada validasi program dengan mencocokan hasil enkripsi dan deskripsi program, dengan variabel yang sudah di set pada Program. Jika cocok maka output akan menghasilkan `PASS` yang berarti Test Case sempurna di selesaikan.
+
 
 ## Analisis Mini-AES
 
 **Kelebihan:**
 
+
 - Mudah dipahami dan mirip AES asli.
 - Cocok untuk belajar substitusi dan difusi.
 
+
 **Keterbatasan:**
+
 
 - Kunci 16-bit lemah (brute-force mudah).
 - Blok kecil, tidak praktis untuk data besar.
+
+
+## Avalanche Effect Analysis
+
+Ini adalah hasil jika kita menjalankan `avalanche test` dengan menggunakan plaintext "1234" dan key "ABCD":
+```
+Avalanche Effect Analysis
+Plaintext: 1234
+Key: ABCD
+Changing plaintext bits one by one
+--------------------------------------------------
+Testing bit 0: PT 1234 -> 1235, Key unchanged
+  Changed bit 0: CT 18C2 -> 3EA8, Bits changed: 7/16 (43.8%)
+Testing bit 1: PT 1234 -> 1236, Key unchanged
+  Changed bit 1: CT 18C2 -> 578F, Bits changed: 9/16 (56.2%)
+Testing bit 2: PT 1234 -> 1230, Key unchanged
+  Changed bit 2: CT 18C2 -> B44C, Bits changed: 8/16 (50.0%)
+Testing bit 3: PT 1234 -> 123C, Key unchanged
+  Changed bit 3: CT 18C2 -> 40FA, Bits changed: 6/16 (37.5%)
+Testing bit 4: PT 1234 -> 1224, Key unchanged
+  Changed bit 4: CT 18C2 -> 21E5, Bits changed: 8/16 (50.0%)
+Testing bit 5: PT 1234 -> 1214, Key unchanged
+  Changed bit 5: CT 18C2 -> A61B, Bits changed: 11/16 (68.8%)
+Testing bit 6: PT 1234 -> 1274, Key unchanged
+  Changed bit 6: CT 18C2 -> 0B38, Bits changed: 9/16 (56.2%)
+Testing bit 7: PT 1234 -> 12B4, Key unchanged
+  Changed bit 7: CT 18C2 -> B769, Bits changed: 11/16 (68.8%)
+Testing bit 8: PT 1234 -> 1334, Key unchanged
+  Changed bit 8: CT 18C2 -> EEB1, Bits changed: 11/16 (68.8%)
+Testing bit 9: PT 1234 -> 1034, Key unchanged
+  Changed bit 9: CT 18C2 -> 0598, Bits changed: 8/16 (50.0%)
+Testing bit 10: PT 1234 -> 1634, Key unchanged
+  Changed bit 10: CT 18C2 -> CD43, Bits changed: 7/16 (43.8%)
+Testing bit 11: PT 1234 -> 1A34, Key unchanged
+  Changed bit 11: CT 18C2 -> 41E6, Bits changed: 6/16 (37.5%)
+Testing bit 12: PT 1234 -> 0234, Key unchanged
+  Changed bit 12: CT 18C2 -> 3448, Bits changed: 6/16 (37.5%)
+Testing bit 13: PT 1234 -> 3234, Key unchanged
+  Changed bit 13: CT 18C2 -> EEAE, Bits changed: 10/16 (62.5%)
+Testing bit 14: PT 1234 -> 5234, Key unchanged
+  Changed bit 14: CT 18C2 -> 512F, Bits changed: 9/16 (56.2%)
+Testing bit 15: PT 1234 -> 9234, Key unchanged
+  Changed bit 15: CT 18C2 -> F0F5, Bits changed: 9/16 (56.2%)
+
+Avalanche Effect Summary:
+Average bits changed: 52.73%
+Good avalanche effect (close to 50% bit changes)
+```
+
+Dari hasil diatas, kami mengubah **bit dari plaintext** nya dan dapat kita tarik informasi:
+
+Hasil pengujian menunjukkan rata-rata 52.73% bit berubah di ciphertext, menunjukkan efek avalanche yang sangat baik (ideal mendekati 50%).
+Ini membuktikan bahwa implementasi Mini-AES memiliki difusi yang kuat terhadap perubahan kecil pada input.
+
+## Mode Operasi Block Cipher
+
+Sebagai fitur tambahan, kami mengimplementasikan dua mode operasi block cipher yang umum digunakan dalam kriptografi: ECB (Electronic Codebook) dan CBC (Cipher Block Chaining).
+
+### ECB (Electronic Codebook)
+
+ECB adalah mode operasi paling sederhana di mana setiap blok plaintext dienkripsi secara independen menggunakan kunci yang sama.
+
+**Alur Enkripsi ECB:**
+1. Bagi plaintext menjadi blok-blok 16-bit
+2. Untuk setiap blok plaintext:
+   - Enkripsi blok menggunakan Mini-AES dengan kunci yang sama
+   - Tambahkan hasil enkripsi ke ciphertext
+3. Gabungkan semua blok ciphertext untuk mendapatkan hasil akhir
+
+**Alur Dekripsi ECB:**
+1. Bagi ciphertext menjadi blok-blok 16-bit
+2. Untuk setiap blok ciphertext:
+   - Dekripsi blok menggunakan Mini-AES dengan kunci yang sama
+   - Tambahkan hasil dekripsi ke plaintext
+3. Gabungkan semua blok plaintext untuk mendapatkan hasil akhir
+
+**Kelebihan ECB:**
+- Sederhana dan mudah diimplementasikan
+- Memungkinkan akses acak ke blok data
+
+**Kelemahan ECB:**
+- Blok plaintext yang identik menghasilkan blok ciphertext yang identik
+- Tidak menyembunyikan pola data dengan baik
+- Rentan terhadap serangan replay dan substitusi
+
+### CBC (Cipher Block Chaining)
+
+CBC adalah mode operasi di mana setiap blok plaintext di-XOR dengan blok ciphertext sebelumnya sebelum dienkripsi.
+
+**Alur Enkripsi CBC:**
+1. Inisialisasi vektor (IV) secara acak
+2. Bagi plaintext menjadi blok-blok 16-bit
+3. Untuk blok pertama:
+   - XOR blok plaintext dengan IV
+   - Enkripsi hasil XOR menggunakan Mini-AES
+   - Simpan hasil sebagai blok ciphertext pertama
+4. Untuk blok selanjutnya:
+   - XOR blok plaintext dengan blok ciphertext sebelumnya
+   - Enkripsi hasil XOR menggunakan Mini-AES
+   - Simpan hasil sebagai blok ciphertext berikutnya
+5. Gabungkan IV dan semua blok ciphertext untuk mendapatkan hasil akhir
+
+**Alur Dekripsi CBC:**
+1. Ekstrak IV dari awal ciphertext
+2. Bagi ciphertext menjadi blok-blok 16-bit (tidak termasuk IV)
+3. Untuk blok pertama:
+   - Dekripsi blok ciphertext menggunakan Mini-AES
+   - XOR hasil dekripsi dengan IV
+   - Simpan hasil sebagai blok plaintext pertama
+4. Untuk blok selanjutnya:
+   - Simpan blok ciphertext saat ini
+   - Dekripsi blok ciphertext menggunakan Mini-AES
+   - XOR hasil dekripsi dengan blok ciphertext sebelumnya
+   - Simpan hasil sebagai blok plaintext berikutnya
+5. Gabungkan semua blok plaintext untuk mendapatkan hasil akhir
+
+**Kelebihan CBC:**
+- Menyembunyikan pola dalam plaintext
+- Blok plaintext yang identik menghasilkan ciphertext yang berbeda
+- Kesalahan dalam satu blok hanya mempengaruhi dua blok plaintext saat dekripsi
+
+**Kelemahan CBC:**
+- Tidak dapat diparalelkan saat enkripsi
+- Memerlukan IV yang acak dan unik
+- Rentan terhadap bit-flipping attack
+
+### Perbandingan ECB dan CBC
+
+Mode CBC menawarkan keamanan yang lebih baik dibandingkan ECB karena:
+1. CBC menyembunyikan pola dalam plaintext dengan lebih baik
+2. Blok plaintext yang identik menghasilkan blok ciphertext yang berbeda
+3. Perubahan satu bit dalam IV atau blok ciphertext memengaruhi semua blok plaintext berikutnya (efek avalanche pada level blok)
+
+Dalam implementasi kami, mode CBC memastikan hasil enkripsi lebih aman dengan menambahkan IV di awal ciphertext, sehingga pesan yang sama akan menghasilkan ciphertext yang berbeda setiap kali dienkripsi.
