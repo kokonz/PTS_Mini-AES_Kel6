@@ -156,6 +156,31 @@ def run_tests(log, result_label):
         if not (ok_enc and ok_dec): all_pass = False
     result_label.config(text=f"Tests {'PASSED' if all_pass else 'SOME FAILED'}")
 
+def count_changed_bits(x, y):
+    """Menghitung jumlah bit berbeda antara dua 16-bit angka."""
+    return bin(x ^ y).count('1')
+
+def avalanche_test(pt, key, log):
+    """Avalanche Effect Test: Ubah 1 bit di PT dan Key, log perubahan."""
+    original_ct = encrypt_verbose(pt, key, lambda msg: None)
+    log("=== Avalanche Test: Perubahan 1 bit di Plaintext ===")
+    for i in range(16):
+        flipped_pt = pt ^ (1 << i)
+        new_ct = encrypt_verbose(flipped_pt, key, lambda msg: None)
+        changed_bits = count_changed_bits(original_ct, new_ct)
+        percentage = (changed_bits / 16) * 100
+        log(f"Bit {i}: PT={format_hex(flipped_pt)}, CT={format_hex(new_ct)}, "
+            f"Changed Bits={changed_bits}/16 ({percentage:.2f}%)")
+
+    log("\n=== Avalanche Test: Perubahan 1 bit di Key ===")
+    for i in range(16):
+        flipped_key = key ^ (1 << i)
+        new_ct = encrypt_verbose(pt, flipped_key, lambda msg: None)
+        changed_bits = count_changed_bits(original_ct, new_ct)
+        percentage = (changed_bits / 16) * 100
+        log(f"Bit {i}: Key={format_hex(flipped_key)}, CT={format_hex(new_ct)}, "
+            f"Changed Bits={changed_bits}/16 ({percentage:.2f}%)")
+
 # Spesifikasi A.3: GUI dengan Tkinter untuk input, output, log, dan test
 class MiniAESApp:
     def __init__(self, root):
@@ -169,6 +194,7 @@ class MiniAESApp:
         ttk.Button(root, text="Enkripsi", command=self.do_encrypt).grid(row=2, column=0)
         ttk.Button(root, text="Dekripsi", command=self.do_decrypt).grid(row=2, column=1)
         ttk.Button(root, text="Run Tests", command=self.do_tests).grid(row=2, column=2)
+        ttk.Button(root, text="Avalanche Test", command=self.do_avalance).grid(row=2, column=3)
         # Label hasil (A.3.2)
         self.result_label = ttk.Label(root, text="----"); self.result_label.grid(row=3, column=0, columnspan=3)
         # ScrolledText untuk log detail tiap ronde (A.3.2)
@@ -210,6 +236,16 @@ class MiniAESApp:
         # A.3.3: Jalankan 5 test case otomatis
         self.clear_log()
         run_tests(self.append_log, self.result_label)
+        
+    def do_avalance(self):
+        self.clear_log()
+        try:
+            pt = int(self.plain_entry.get(), 16)
+            key = int(self.key_entry.get(), 16)
+            avalanche_test(pt, key, self.append_log)
+            self.result_label.config(text="Avalanche test completed")
+        except ValueError:
+            self.result_label.config(text="Input hex tidak valid!")
 
 # Main program (A.3: GUI)
 if __name__ == '__main__':
