@@ -185,12 +185,54 @@ ECB adalah mode operasi paling sederhana di mana setiap blok plaintext dienkrips
    - Tambahkan hasil enkripsi ke ciphertext
 3. Gabungkan semua blok ciphertext untuk mendapatkan hasil akhir
 
+**Implementasi Enkripsi ECB:**
+```python
+def ecb_encrypt(plaintext, key, log):
+    """
+    Encrypt using ECB mode (each block independently)
+    - plaintext: list of 16-bit blocks
+    - key: 16-bit key
+    """
+    log(f"ECB Encryption with Key: {format_hex(key)}")
+    log(f"Input blocks: {[format_hex(block) for block in plaintext]}")
+    
+    ciphertext = []
+    for i, block in enumerate(plaintext):
+        log(f"\nProcessing block {i+1}/{len(plaintext)}: {format_hex(block)}")
+        ct_block = encrypt_verbose(block, key, log)
+        ciphertext.append(ct_block)
+        
+    log(f"\nECB Encryption complete, output: {[format_hex(block) for block in ciphertext]}")
+    return ciphertext
+```
+
 **Alur Dekripsi ECB:**
 1. Bagi ciphertext menjadi blok-blok 16-bit
 2. Untuk setiap blok ciphertext:
    - Dekripsi blok menggunakan Mini-AES dengan kunci yang sama
    - Tambahkan hasil dekripsi ke plaintext
 3. Gabungkan semua blok plaintext untuk mendapatkan hasil akhir
+
+**Implementasi Dekripsi ECB:**
+```python
+def ecb_decrypt(ciphertext, key, log):
+    """
+    Decrypt using ECB mode (each block independently)
+    - ciphertext: list of 16-bit blocks
+    - key: 16-bit key
+    """
+    log(f"ECB Decryption with Key: {format_hex(key)}")
+    log(f"Input blocks: {[format_hex(block) for block in ciphertext]}")
+    
+    plaintext = []
+    for i, block in enumerate(ciphertext):
+        log(f"\nProcessing block {i+1}/{len(ciphertext)}: {format_hex(block)}")
+        pt_block = decrypt_verbose(block, key, log)
+        plaintext.append(pt_block)
+        
+    log(f"\nECB Decryption complete, output: {[format_hex(block) for block in plaintext]}")
+    return plaintext
+```
 
 **Kelebihan ECB:**
 - Sederhana dan mudah diimplementasikan
@@ -218,6 +260,38 @@ CBC adalah mode operasi di mana setiap blok plaintext di-XOR dengan blok ciphert
    - Simpan hasil sebagai blok ciphertext berikutnya
 5. Gabungkan IV dan semua blok ciphertext untuk mendapatkan hasil akhir
 
+**Implementasi Enkripsi CBC:**
+```python
+def cbc_encrypt(plaintext, key, iv, log):
+    """
+    Encrypt using CBC mode (each block XORed with previous ciphertext)
+    - plaintext: list of 16-bit blocks
+    - key: 16-bit key
+    - iv: 16-bit initialization vector
+    """
+    log(f"CBC Encryption with Key: {format_hex(key)}, IV: {format_hex(iv)}")
+    log(f"Input blocks: {[format_hex(block) for block in plaintext]}")
+    
+    ciphertext = []
+    prev_block = iv
+    
+    for i, block in enumerate(plaintext):
+        log(f"\nProcessing block {i+1}/{len(plaintext)}: {format_hex(block)}")
+        # XOR plaintext block with previous ciphertext block (or IV for first block)
+        xored = block ^ prev_block
+        log(f"After XOR with previous: {format_hex(xored)}")
+        
+        # Encrypt the XORed block
+        ct_block = encrypt_verbose(xored, key, log)
+        ciphertext.append(ct_block)
+        
+        # Current ciphertext becomes "previous" for next iteration
+        prev_block = ct_block
+        
+    log(f"\nCBC Encryption complete, output: {[format_hex(block) for block in ciphertext]}")
+    return ciphertext
+```
+
 **Alur Dekripsi CBC:**
 1. Ekstrak IV dari awal ciphertext
 2. Bagi ciphertext menjadi blok-blok 16-bit (tidak termasuk IV)
@@ -231,6 +305,40 @@ CBC adalah mode operasi di mana setiap blok plaintext di-XOR dengan blok ciphert
    - XOR hasil dekripsi dengan blok ciphertext sebelumnya
    - Simpan hasil sebagai blok plaintext berikutnya
 5. Gabungkan semua blok plaintext untuk mendapatkan hasil akhir
+
+**Implementasi Dekripsi CBC:**
+```python
+def cbc_decrypt(ciphertext, key, iv, log):
+    """
+    Decrypt using CBC mode
+    - ciphertext: list of 16-bit blocks
+    - key: 16-bit key
+    - iv: 16-bit initialization vector
+    """
+    log(f"CBC Decryption with Key: {format_hex(key)}, IV: {format_hex(iv)}")
+    log(f"Input blocks: {[format_hex(block) for block in ciphertext]}")
+    
+    plaintext = []
+    prev_block = iv
+    
+    for i, block in enumerate(ciphertext):
+        log(f"\nProcessing block {i+1}/{len(ciphertext)}: {format_hex(block)}")
+        
+        # Decrypt the current ciphertext block
+        decrypted = decrypt_verbose(block, key, log)
+        
+        # XOR with previous ciphertext block (or IV for first block)
+        pt_block = decrypted ^ prev_block
+        log(f"After XOR with previous: {format_hex(pt_block)}")
+        
+        plaintext.append(pt_block)
+        
+        # Current ciphertext becomes "previous" for next iteration
+        prev_block = block
+        
+    log(f"\nCBC Decryption complete, output: {[format_hex(block) for block in plaintext]}")
+    return plaintext
+```
 
 **Kelebihan CBC:**
 - Menyembunyikan pola dalam plaintext
@@ -250,3 +358,39 @@ Mode CBC menawarkan keamanan yang lebih baik dibandingkan ECB karena:
 3. Perubahan satu bit dalam IV atau blok ciphertext memengaruhi semua blok plaintext berikutnya (efek avalanche pada level blok)
 
 Dalam implementasi kami, mode CBC memastikan hasil enkripsi lebih aman dengan menambahkan IV di awal ciphertext, sehingga pesan yang sama akan menghasilkan ciphertext yang berbeda setiap kali dienkripsi.
+
+### Contoh Konversi Data
+
+Untuk mengonversi antara string teks dan blok 16-bit, kami mengimplementasikan fungsi berikut:
+
+```python
+def text_to_blocks(text, block_size=16):
+    """Convert a string to a list of 16-bit blocks"""
+    # Convert string to bytes, then to a hex string
+    hex_str = binascii.hexlify(text.encode()).decode()
+    
+    # Ensure the hex string length is even
+    if len(hex_str) % 4 != 0:
+        hex_str = hex_str + '0' * (4 - len(hex_str) % 4)
+    
+    # Split into 16-bit blocks (4 hex characters per block)
+    blocks = []
+    for i in range(0, len(hex_str), 4):
+        block = int(hex_str[i:i+4], 16)
+        blocks.append(block)
+    
+    return blocks
+
+def blocks_to_text(blocks):
+    """Convert a list of 16-bit blocks back to a string"""
+    hex_str = ""
+    for block in blocks:
+        hex_str += format_hex(block)
+    
+    # Convert hex string to bytes, then to string (stopping at null bytes)
+    try:
+        result = binascii.unhexlify(hex_str).decode(errors='ignore').split('\x00')[0]
+        return result
+    except:
+        return "(binary data)"
+```
